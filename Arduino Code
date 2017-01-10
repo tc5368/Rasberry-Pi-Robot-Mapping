@@ -1,0 +1,65 @@
+#include <RobotShield.h>
+RobotShield rs;
+
+int FrontBump = 2;
+int RightBump = 1;
+int LeftBump = 0;
+int front;
+int left;
+int right;
+int Trigger = 500;
+char incomingByte;
+
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  delay(1000);
+  rs.stop();
+  front = analogRead(FrontBump);
+  left = analogRead(LeftBump);
+  right = analogRead(RightBump);
+  if (front > Trigger){
+    Serial.println("F");
+  }
+  else if (left > Trigger){
+    Serial.println("L");
+  }
+  else if (right > Trigger){
+    Serial.println("R");
+  }
+  else{
+    Serial.println("B");
+  }
+
+  if (Serial.available() > 0){
+    Header = Serial.read();
+    
+    if(Header == 'f'){
+      //Forward Command
+      rs.forward(100,200);
+      delay(500);
+      }
+      
+    if(incomingByte == 'b'){
+      //Backward Command
+      rs.reverse(100,200);
+      delay(500);
+      }
+      
+    if(incomingByte == 'l'){
+      //Left Command
+      // Roughly 18 Deg
+      rs.rot_ccw(100,200);
+      delay(400);
+      }
+      
+    if(incomingByte == 'r'){
+      //Forward Command
+      //Roughly -18 Deg
+      rs.rot_cw(100,200);
+      delay(400);
+      }
+  } 
+}
