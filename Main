@@ -1,0 +1,214 @@
+import serial, time, random, picamera, os, sys
+from qrtools import QR
+
+camera = picamera.PiCamera()
+
+mode = ''
+
+bot = ''
+grid = []
+startx = 5
+starty = 5
+current_x = 5
+current_y = 5
+
+############################################
+
+def go():
+    global grid
+    for i in range(11):
+        grid.append([])
+        for ix in range(11):
+            grid[i].append(' ')
+    grid[starty][startx] = 'X'
+
+def show():
+    for i in range(11):
+        print(grid[i])
+
+############################################
+
+def connect():
+    global bot
+    while True:
+        sleep(1)
+        try:
+            bot = serial.Serial('/dev/ttyACM0',9600)
+            if bot.isOpen() == True:
+                print('Connected')
+                break
+        except:
+            print('Not connected')
+
+            
+############################################
+
+
+def read():
+    ins = bot.readline()
+    return ins
+
+
+def main():
+    global actions
+    actions = Stack(100)
+    connect()
+    while True:
+        new = safer()
+        actions.push(new)
+        sleep(1)
+        
+
+def safe():
+    global current_x, current_y
+    ins = read()
+    if ins[0] == 'F':
+        print('Obstacle Infront')
+        print('Goning Backwards')
+        bot.write('b')
+        ##Oreintation change (maybe seperate function) ^ V < > ??
+        ##check_orientation()
+        return 'b'
+        
+        
+    elif ins[0] == 'L':
+        print('Obsatcle on the Left')
+        print('Going Right')
+        bot.write('r')
+        #sleep(0.5)
+        #deg = 90
+        #rot = str(round(deg/10))
+        #bot.write(rot)
+        return 'r'#,rot
+    ##Note to change it to rotate 90 Deg then move forward 1
+
+        
+    elif ins[0] == 'R':
+        print('Obstacle on the Right')
+        print('Going Left')
+        bot.write('l')
+        return 'l'
+
+
+    elif ins[0] == 'B':
+        print('Nothing Ahead')
+        print('Going Forward')
+        bot.write('f')
+        return 'f'
+############################################
+
+def safer():
+    global current_x, current_y
+    bot.write('t')
+    while True:
+        ins = str(bot.readline())[0]
+        sleep(0.5)
+        if ins != 'F':  #Constantly Forward until hits a wall
+            print('No Wall moving Forwards')
+            bot.write('f')
+        else:
+            break
+    bot.write('r')
+############################################
+
+#This subrountine whilst simple is a key compnent, It uses the qr-tools python    
+#libary to decode the qr code, it is also reliant on having zbar which is a
+#open scource barcode reader libary.
+
+    
+def decode():
+    current = QR(filename = u'/home/pi/Desktop/Course Work/Python/checking.png')
+    if current.decode():   #For testing purposes, returns true if works
+        data = (str(current.data_to_string())[3:]) #have to use index to get the correct section
+        return data
+############################################
+
+
+#Beacuse this program will use image recognition to get instructions.
+#I will be running a sub rountine that will delete all .png files from a folder
+#This is just to be able to avoid creating to many images.
+def cleanup():
+    sys.path = '/home/pi/Desktop/Course Work/Python'
+    os.system('rm *.png')
+
+############################################
+
+#This is the subrountine that will run at the begining. It will loop around
+#and keep taking photos until it is able to deocde a qr code.
+
+def finding_initial():
+    camera.capture('checking.png')
+
+############################################
+
+def loop_until_find():
+    sleep(2) #allow the camera a warmup time.
+    while mode = '':
+        sleep(1) #Don't want to spam the system
+        finding_initial()
+        ins = decode()
+        cleanup()
+        validate(ins)
+
+############################################
+
+def validate(s):
+    #Random Movement (RM) or Map out (MO)
+    if s == 'rm':
+        mode = 'rm'
+    elif s == 'mo':
+        mode = 'mo'
+
+
+############################################
+
+class Stack():
+    def __init__(self,maxsize):
+        ##maybe remove max size conveince.
+        self.maxsize = maxsize
+        self.pointer = -1
+        self.stack = []
+        
+    def display(self):
+        print(self.stack)         
+                       
+    def push(self,to_add):
+        if len(self.stack) < self.maxsize:
+            self.stack.append(to_add)
+            self.pointer += 1
+        else:
+            print('Stack Overflow')
+                       
+    def pop(self):
+        if len(self.stack) > 0:
+            current = (self.stack[self.pointer])
+            self.stack[self.pointer] = ''
+            self.pointer -= 1
+            return current
+        else:
+            print('Underflow')
+
+    def returning(self):
+        return self.stack
+
+    def size(self):
+        return(len(self.stack))
+
+
+############################################
+
+
+
+
+
+
+############################################
+def sleep(n):
+    time.sleep(n)
+
+def test(): #checking its working
+    print('YEP')
+
+    
+        
+        
