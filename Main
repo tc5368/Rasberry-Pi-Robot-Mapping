@@ -4,11 +4,11 @@ from qrtools import QR
 camera = picamera.PiCamera()
 
 mode = ''
-
+roomSize = 11
 bot = ''
 grid = []
-startx = 5
-starty = 5
+STARTX = 5
+STARTY = 5
 current_x = 5
 current_y = 5
 
@@ -16,14 +16,14 @@ current_y = 5
 
 def go():
     global grid
-    for i in range(11):
+    for i in range(roomSize):
         grid.append([])
-        for ix in range(11):
+        for ix in range(roomSize):
             grid[i].append(' ')
     grid[starty][startx] = 'X'
 
 def show():
-    for i in range(11):
+    for i in range(roomSize):
         print(grid[i])
 
 ############################################
@@ -44,10 +44,11 @@ def connect():
 ############################################
 
 
-def read():
-    ins = bot.readline()
-    return ins
-
+def read():                             #This is propably my most simple sub orutine, this will read the serial data that is sent
+    ins = bot.readline()                #from the ardunio to the raspberry pi, it will allow the pi to know the satus of the
+    return ins                          #sensors and other infomation.
+    
+############################################
 
 def main():
     global actions
@@ -58,6 +59,7 @@ def main():
         actions.push(new)
         sleep(1)
         
+############################################       
 
 def safe():
     global current_x, current_y
@@ -112,6 +114,7 @@ def safer():
                 break
             print('Bot is now turning right')
             bot.write('r')
+            
 ############################################
 
 #This subrountine whilst simple is a key compnent, It uses the qr-tools python    
@@ -124,12 +127,13 @@ def decode():
     if current.decode():   #For testing purposes, returns true if works
         data = (str(current.data_to_string())[3:]) #have to use index to get the correct section
         return data
+        
 ############################################
-
 
 #Beacuse this program will use image recognition to get instructions.
 #I will be running a sub rountine that will delete all .png files from a folder
 #This is just to be able to avoid creating to many images.
+
 def cleanup():
     sys.path = '/home/pi/Desktop/Course Work/Python'
     os.system('rm *.png')
@@ -139,77 +143,71 @@ def cleanup():
 #This is the subrountine that will run at the begining. It will loop around
 #and keep taking photos until it is able to deocde a qr code.
 
-def finding_initial():
+def take_photo():
     camera.capture('checking.png')
 
 ############################################
 
 def loop_until_find():
-    sleep(2) #allow the camera a warmup time.
-    while mode = '':
-        sleep(1) #Don't want to spam the system
-        finding_initial()
+    sleep(2) #allow the camera a warmup time.                   #This function is one of the first functions that will run, it will
+    while mode = '':                                            #loop constantly until it finds a qr code that updates the mode
+        sleep(1) #Don't want to spam the system                 #is updated which mean that a qr code has been found
+        take_photo()
         ins = decode()
         cleanup()
         validate(ins)
 
 ############################################
 
-def validate(s):
-    #Random Movement (RM) or Map out (MO)
-    if s == 'rm':
-        mode = 'rm'
+def validate(s):                                       #This subroutine evaluates the input from the qr code and then gets which
+    #Random Movement (RM) or Map out (MO)              #mode that you want the robot in. I also added a else statment in that would run
+    if s == 'rm':                                      #code sent in qr form, this is just for testing purposes for when I don't have a 
+        mode = 'rm'                                    #keyboard.
     elif s == 'mo':
         mode = 'mo'
-
+    else:
+        mode = 'exec'
+        try:
+            exec(ins)    #Will 100% be removed this will take the input QR code as a line of python and then execute it. (Just for testing)
+        except:
+            None
 
 ############################################
 
 class Stack():
-    def __init__(self,maxsize):
-        ##maybe remove max size conveince.
-        self.maxsize = maxsize
-        self.pointer = -1
-        self.stack = []
+    def __init__(self):
+        self.pointer = -1                   #This is my stack subroutine, it uses OOP to allow me to push and pop elements to and from
+        self.stack = []                     #the list. It can also display its size, and return itself in its entirity.
         
     def display(self):
         print(self.stack)         
                        
     def push(self,to_add):
-        if len(self.stack) < self.maxsize:
-            self.stack.append(to_add)
-            self.pointer += 1
-        else:
-            print('Stack Overflow')
-                       
+        self.stack.append(to_add)
+        self.pointer += 1
+        
     def pop(self):
         if len(self.stack) > 0:
             current = (self.stack[self.pointer])
-            self.stack[self.pointer] = ''
+            self.stack[self.pointer] = None
             self.pointer -= 1
             return current
         else:
             print('Underflow')
+            return None
 
-    def returning(self):
+    def return_stack(self):
         return self.stack
 
     def size(self):
         return(len(self.stack))
-
-
+        
 ############################################
 
-
-
-
-
-
-############################################
 def sleep(n):
-    time.sleep(n)
-
-def test(): #checking its working
+    time.sleep(n)                               #These are my garbage functions will propably be taken out later on these are just for
+                                                #convinence and i know I can just go form time import sleep but I like it on 1 line.
+def test(): #checking its working               # The test is just that, a test, making sure that the python is running good.
     print('YEP')
 
     
