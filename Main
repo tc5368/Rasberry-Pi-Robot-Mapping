@@ -98,17 +98,20 @@ def safe():
 ############################################
 
 def safer():
-    global current_x, current_y
-    bot.write('t')
-    while True:
-        ins = str(bot.readline())[0]
-        sleep(0.5)
-        if ins != 'F':  #Constantly Forward until hits a wall
-            print('No Wall moving Forwards')
-            bot.write('f')
-        else:
-            break
-    bot.write('r')
+    if mode = 'rm':
+        print('Mapping Mode')
+        global current_x, current_y
+        bot.write('t')
+        while True:
+            ins = str(bot.readline())[0]
+            sleep(0.5)
+            if ins != 'F':  #Constantly Forward until hits a wall
+                print('No Wall moving Forwards')
+                bot.write('f')
+            else:
+                break
+            print('Bot is now turning right')
+            bot.write('r')
 ############################################
 
 #This subrountine whilst simple is a key compnent, It uses the qr-tools python    
