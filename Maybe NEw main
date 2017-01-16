@@ -1,0 +1,56 @@
+import turtle, serial
+import time
+
+bot = ''
+
+
+def main():
+    connect()
+    readSensorValues()
+    data.avg()
+    
+
+def connect():
+    global bot
+    time.sleep(1)
+    while True:
+        try:
+            bot = serial.Serial('/dev/tty.usbmodem1411',9600)
+            print('Connection Established')
+            if bot.isOpen() == True:
+                break
+        except:
+            None
+            
+def readSensorValues():
+    for i in range(20):           
+        tempf = int(bot.readline())
+        templ = int(bot.readline())
+        tempr = int(bot.readline())
+        data.addValue(tempf,templ,tempr)
+           
+
+class lists():
+    def __init__(self):
+        self.forward = []
+        self.right = []
+        self.left = []
+        self.countForward = 0
+        self.countLeft = 0
+        self.countRight = 0
+        
+    def avg(self):
+        max = len(self.forward)
+        for i in range(max):
+            self.countForward += self.forward[i]
+            self.countLeft += self.left[i]
+            self.countRight += self.right[i]
+        return self.countForward/max, self.countLeft/max, self.countRight/max
+        
+    def addValue(self,f,l,r):
+        self.forward.append(f)
+        self.left.append(l)
+        self.right.append(r)
+        
+        
+data = lists()
