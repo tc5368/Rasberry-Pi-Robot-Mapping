@@ -1,0 +1,37 @@
+#include <RobotShield.h>
+RobotShield rs;
+
+int FrontBump = 2;
+int RightBump = 1;
+int LeftBump = 0;
+int front;
+int left;
+int right;
+int Trigger = 500;
+char incomingByte;
+
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  delay(200);
+  rs.stop();
+  if (Serial.available() > 0){
+    incomingByte = Serial.read();
+    if(incomingByte == 'r'){
+      rs.rot_cw(200,500);
+      delay(1000);
+    }else if (incomingByte == 's'){
+      front = analogRead(FrontBump);
+      left = analogRead(LeftBump);
+      right = analogRead(RightBump);
+      Serial.println(front);
+      Serial.println(left);
+      Serial.println(right);
+      delay(1000);
+    }else if (incomingByte == 'f'){
+      rs.forward(200,500);  
+     }
+  }
+}
