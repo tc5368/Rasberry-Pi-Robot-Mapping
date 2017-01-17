@@ -4,10 +4,18 @@ import time
 bot = ''
 
 
+#With usign the analouge read I have found these to be the average measurments
+keyValues = {610:5,530:10,460:11,440:12,370:14,310:16,280:18,260:20,200:25,150:30,130:40,110:60,105:80}
+
 def main():
     connect()
-    readSensorValues()
-    data.avg()
+    while True:
+        data.clear()
+        readSensorValues()
+        f,l,r = convert()
+        plot(f*2,l*2,r*2)
+        rotate()
+        turtle.right(27)
     
 
 def connect():
@@ -23,13 +31,58 @@ def connect():
             None
             
 def readSensorValues():
-    for i in range(20):           
+    for i in range(10):           
         tempf = int(bot.readline())
         templ = int(bot.readline())
         tempr = int(bot.readline())
         data.addValue(tempf,templ,tempr)
-           
 
+def rotate():
+    bot.write('r')
+
+        
+
+def convert():
+    #The sensonrs on the robot read on a logarithmic scale and so I have to convert this
+    #value into onee that I can use.
+    forDis, leftDis, rightDis = data.avg()
+    inputDis = [forDis,leftDis,rightDis]
+    outputDis = [0,0,0]
+    print(inputDis)
+    
+    for iy in range(3):
+        for ix in range(10):
+          if (inputDis[iy] + ix) in keyValues:
+              outputDis[iy] = keyValues[inputDis[iy]+ix]
+        for ix in range(10):
+          if (inputDis[iy] - ix) in keyValues:
+              outputDis[iy] = keyValues[inputDis[iy]-ix]
+    if forDis or leftDis or rightDis == '':
+        for iy in range(3):
+            for ix in range(30):
+                  if (inputDis[iy] + ix) in keyValues:
+                      outputDis[iy] = keyValues[inputDis[iy]+ix]
+            for ix in range(30):
+                  if (inputDis[iy] - ix) in keyValues:
+                      outputDis[iy] = keyValues[inputDis[iy]-ix]
+    for iy in range(3):
+        if inputDis[iy] < 90:
+            outputDis[iy] == 150
+        
+    print(outputDis)
+    return outputDis
+
+def plot(f,l,r):
+    turtle.fd(f)
+    turtle.bk(f)
+    turtle.left(45)
+    turtle.fd(l)
+    turtle.bk(l)
+    turtle.right(90)
+    turtle.fd(r)
+    turtle.bk(r)
+    turtle.left(45)
+    
 class lists():
     def __init__(self):
         self.forward = []
@@ -51,6 +104,14 @@ class lists():
         self.forward.append(f)
         self.left.append(l)
         self.right.append(r)
+
+    def clear(self):
+        self.forward = []
+        self.right = []
+        self.left = []
+        self.countForward = 0
+        self.countLeft = 0
+        self.countRight = 0
         
         
 data = lists()
