@@ -1,215 +1,190 @@
-import serial, time, random, picamera, os, sys
-from qrtools import QR
+import turtle, serial, time, random, os, sys
+#from qrtools import QR
+#import picamera
+#camera = picamera.PiCamera()
 
-camera = picamera.PiCamera()
-
-mode = ''
-roomSize = 11
 bot = ''
 grid = []
-STARTX = 5
-STARTY = 5
-current_x = 5
-current_y = 5
+startx = 0
+starty = 10
+current_x = 0
+current_y = 10
 
-############################################
+#With usign the analouge read I have found these to be the average measurments
+keyValues = {610:5,530:10,460:11,440:12,370:14,310:16,280:18,260:20,200:25,150:30,130:40,110:60,105:80}
+
+def newMain():
+    connect()
+    readSensorValues()
+    f,l,r = convert()
+
+
+def main():
+    connect()
+    while True:
+        data.clear()
+        readSensorValues()
+        f,l,r = convert()
+        plot(f*2,l*2,r*2)
+        rotate()
+        turtle.right(27)
+
+def noTurn():
+    connect()
+    data.clear()
+    readSensorValues()
+    f,l,r = convert()
+    plot(f*2,l*2,r*2)
+
+
+def connect():
+    global bot
+    time.sleep(1)
+    while True:
+        try:
+            bot = serial.Serial('/dev/tty.usbmodem1411',9600)
+            if bot.isOpen() == True:
+                print('Connection Established')
+                break
+        except:
+            print('Scanning...')
+            time.sleep(1)
+            
+def readSensorValues():
+    global actions
+    print('start')
+    actions.push('Read Sensors')
+    for i in range(10):
+        print(i)
+        bot.write('s')
+        time.sleep(0.5)
+        print('Starting')
+        tempf = bot.readline()
+        print('F Done')
+        templ = bot.readline()
+        print('L Done')
+        tempr = bot.readline()
+        print('R Done')
+        data.addValue(tempf,templ,tempr)
+        print('Data added')
+
+def rotate():
+    actions.push('Right rotate 27 Deg')
+    bot.write('r')
 
 def go():
     global grid
-    for i in range(roomSize):
+    for i in range(11):
         grid.append([])
-        for ix in range(roomSize):
+        for ix in range(11):
             grid[i].append(' ')
     grid[starty][startx] = 'X'
 
 def show():
-    for i in range(roomSize):
-        print(grid[i])
+    for i in range(11):
+        print(grid[i])        
 
-############################################
-
-def connect():
-    global bot
-    while True:
-        sleep(1)
-        try:
-            bot = serial.Serial('/dev/ttyACM0',9600)
-            if bot.isOpen() == True:
-                print('Connected')
-                break
-        except:
-            print('Not connected')
-
-            
-############################################
-
-
-def read():                             #This is propably my most simple sub orutine, this will read the serial data that is sent
-    ins = bot.readline()                #from the ardunio to the raspberry pi, it will allow the pi to know the satus of the
-    return ins                          #sensors and other infomation.
+def convert():
+    forDis, leftDis, rightDis = data.avg()
+    inputDis = [forDis,leftDis,rightDis]
+    outputDis = [0,0,0]
+    print(inputDis)
     
-############################################
-
-def main():
-    global actions
-    actions = Stack(100)
-    connect()
-    while True:
-        new = safer()
-        actions.push(new)
-        sleep(1)
+    for iy in range(3):
+        for ix in range(10):
+          if (inputDis[iy] + ix) in keyValues:
+              outputDis[iy] = keyValues[inputDis[iy]+ix]
+        for ix in range(10):
+          if (inputDis[iy] - ix) in keyValues:
+              outputDis[iy] = keyValues[inputDis[iy]-ix]
+    if forDis or leftDis or rightDis == '':
+        for iy in range(3):
+            for ix in range(30):
+                  if (inputDis[iy] + ix) in keyValues:
+                      outputDis[iy] = keyValues[inputDis[iy]+ix]
+            for ix in range(30):
+                  if (inputDis[iy] - ix) in keyValues:
+                      outputDis[iy] = keyValues[inputDis[iy]-ix]
+    for iy in range(3):
+        if inputDis[iy] < 90:
+            outputDis[iy] == 150
         
-############################################       
+    print(outputDis)
+    return outputDis
 
-def safe():
-    global current_x, current_y
-    ins = read()
-    if ins[0] == 'F':
-        print('Obstacle Infront')
-        print('Goning Backwards')
-        bot.write('b')
-        ##Oreintation change (maybe seperate function) ^ V < > ??
-        ##check_orientation()
-        return 'b'
-        
-        
-    elif ins[0] == 'L':
-        print('Obsatcle on the Left')
-        print('Going Right')
-        bot.write('r')
-        #sleep(0.5)
-        #deg = 90
-        #rot = str(round(deg/10))
-        #bot.write(rot)
-        return 'r'#,rot
-    ##Note to change it to rotate 90 Deg then move forward 1
-
-        
-    elif ins[0] == 'R':
-        print('Obstacle on the Right')
-        print('Going Left')
-        bot.write('l')
-        return 'l'
-
-
-    elif ins[0] == 'B':
-        print('Nothing Ahead')
-        print('Going Forward')
-        bot.write('f')
-        return 'f'
-############################################
-
-def safer():
-    if mode = 'rm':
-        print('Mapping Mode')
-        global current_x, current_y
-        bot.write('t')
-        while True:
-            ins = str(bot.readline())[0]
-            sleep(0.5)
-            if ins != 'F':  #Constantly Forward until hits a wall
-                print('No Wall moving Forwards')
-                bot.write('f')
-            else:
-                break
-            print('Bot is now turning right')
-            bot.write('r')
-            
-############################################
-
-#This subrountine whilst simple is a key compnent, It uses the qr-tools python    
-#libary to decode the qr code, it is also reliant on having zbar which is a
-#open scource barcode reader libary.
-
+def plot(f,l,r):
+    turtle.fd(f)
+    turtle.bk(f)
+    turtle.left(45)
+    turtle.fd(l)
+    turtle.bk(l)
+    turtle.right(90)
+    turtle.fd(r)
+    turtle.bk(r)
+    turtle.left(45)
     
-def decode():
-    current = QR(filename = u'/home/pi/Desktop/Course Work/Python/checking.png')
-    if current.decode():   #For testing purposes, returns true if works
-        data = (str(current.data_to_string())[3:]) #have to use index to get the correct section
-        return data
+class lists():
+    def __init__(self):
+        self.forward = []
+        self.right = []
+        self.left = []
+        self.countForward = 0
+        self.countLeft = 0
+        self.countRight = 0
         
-############################################
+    def avg(self):
+        max = len(self.forward)
+        for i in range(max):
+            self.countForward += self.forward[i]
+            self.countLeft += self.left[i]
+            self.countRight += self.right[i]
+        return self.countForward/max, self.countLeft/max, self.countRight/max
+        
+    def addValue(self,f,l,r):
+        self.forward.append(f)
+        self.left.append(l)
+        self.right.append(r)
 
-#Beacuse this program will use image recognition to get instructions.
-#I will be running a sub rountine that will delete all .png files from a folder
-#This is just to be able to avoid creating to many images.
-
-def cleanup():
-    sys.path = '/home/pi/Desktop/Course Work/Python'
-    os.system('rm *.png')
-
-############################################
-
-#This is the subrountine that will run at the begining. It will loop around
-#and keep taking photos until it is able to deocde a qr code.
-
-def take_photo():
-    camera.capture('checking.png')
-
-############################################
-
-def loop_until_find():
-    sleep(2) #allow the camera a warmup time.                   #This function is one of the first functions that will run, it will
-    while mode = '':                                            #loop constantly until it finds a qr code that updates the mode
-        sleep(1) #Don't want to spam the system                 #is updated which mean that a qr code has been found
-        take_photo()
-        ins = decode()
-        cleanup()
-        validate(ins)
-
-############################################
-
-def validate(s):                                       #This subroutine evaluates the input from the qr code and then gets which
-    #Random Movement (RM) or Map out (MO)              #mode that you want the robot in. I also added a else statment in that would run
-    if s == 'rm':                                      #code sent in qr form, this is just for testing purposes for when I don't have a 
-        mode = 'rm'                                    #keyboard.
-    elif s == 'mo':
-        mode = 'mo'
-    else:
-        mode = 'exec'
-        try:
-            exec(ins)    #Will 100% be removed this will take the input QR code as a line of python and then execute it. (Just for testing)
-        except:
-            None
-
-############################################
+    def clear(self):
+        self.forward = []
+        self.right = []
+        self.left = []
+        self.countForward = 0
+        self.countLeft = 0
+        self.countRight = 0
 
 class Stack():
-    def __init__(self):
-        self.pointer = -1                   #This is my stack subroutine, it uses OOP to allow me to push and pop elements to and from
-        self.stack = []                     #the list. It can also display its size, and return itself in its entirity.
+    def __init__(self,maxsize):
+        ##maybe remove max size conveince.
+        self.maxsize = maxsize
+        self.pointer = -1
+        self.stack = []
         
     def display(self):
         print(self.stack)         
                        
     def push(self,to_add):
-        self.stack.append(to_add)
-        self.pointer += 1
-        
+        if len(self.stack) < self.maxsize:
+            self.stack.append(to_add)
+            self.pointer += 1
+        else:
+            print('Stack Overflow')
+                       
     def pop(self):
         if len(self.stack) > 0:
             current = (self.stack[self.pointer])
-            self.stack[self.pointer] = None
+            self.stack[self.pointer] = ''
             self.pointer -= 1
             return current
         else:
             print('Underflow')
-            return None
 
-    def return_stack(self):
+    def returning(self):
         return self.stack
 
     def size(self):
         return(len(self.stack))
         
-############################################
-
-def sleep(n):
-    time.sleep(n)                               #These are my garbage functions will propably be taken out later on these are just for
-                                                #convinence and i know I can just go form time import sleep but I like it on 1 line.
-def test(): #checking its working               # The test is just that, a test, making sure that the python is running good.
-    print('YEP')
-
-    
         
-        
+data = lists()
+actions = Stack(100)
