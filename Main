@@ -1,7 +1,8 @@
 import turtle, serial, time, random, os, sys
-#from qrtools import QR
-#import picamera
-#camera = picamera.PiCamera()
+from time import sleep
+from qrtools import QR
+import picamera
+camera = picamera.PiCamera()
 
 bot = ''
 grid = []
@@ -9,25 +10,66 @@ startx = 0
 starty = 10
 current_x = 0
 current_y = 10
+mode = ''
 
 #With usign the analouge read I have found these to be the average measurments
 keyValues = {610:5,530:10,460:11,440:12,370:14,310:16,280:18,260:20,200:25,150:30,130:40,110:60,105:80}
 
-def newMain():
-    connect()
-    readSensorValues()
-    f,l,r = convert()
 
 
-def main():
+
+
+
+def decode():
+    current = QR(filename = u'/home/pi/Desktop/Course Work/Python/checking.png')
+    if current.decode():   #For testing purposes, returns true if works
+        data = (str(current.data_to_string())[3:]) #have to use index to get the correct section
+        return data
+
+def cleanup():
+    sys.path = '/home/pi/Desktop/Course Work/Python'
+    os.system('rm *.png')
+
+def take_photo():
+    camera.capture('checking.png')
+
+def loop_until_find():
+    sleep(2)  #allow the camera a warmup time.                   #This function is one of the first functions that will run, it will
+    while mode == '':                                            #loop constantly until it finds a qr code that updates the mode
+        sleep(1)  #Don't want to spam the system                 #is updated which mean that a qr code has been found
+        take_photo()
+        ins = decode()
+        cleanup()
+        try:
+            exec(ins)
+        except:
+            pass
+
+def spinning_map():
     connect()
     while True:
         data.clear()
         readSensorValues()
         f,l,r = convert()
         plot(f*2,l*2,r*2)
-        rotate()
+        rotater()
         turtle.right(27)
+
+
+def straight_map():
+    connect()
+    While True:
+        data.clear
+        readFront()
+        #forward scan right forward scan
+
+def readFront():
+    None #Read only front sensor
+
+
+
+
+    
 
 def noTurn():
     connect()
@@ -37,12 +79,13 @@ def noTurn():
     plot(f*2,l*2,r*2)
 
 
+
 def connect():
     global bot
     time.sleep(1)
     while True:
         try:
-            bot = serial.Serial('/dev/tty.usbmodem1411',9600)
+            bot = serial.Serial('/dev/ttyACM0',9600,timeout=1)
             if bot.isOpen() == True:
                 print('Connection Established')
                 break
@@ -55,22 +98,31 @@ def readSensorValues():
     print('start')
     actions.push('Read Sensors')
     for i in range(10):
-        print(i)
+        time.sleep(0.2)
         bot.write('s')
-        time.sleep(0.5)
-        print('Starting')
-        tempf = bot.readline()
-        print('F Done')
-        templ = bot.readline()
-        print('L Done')
-        tempr = bot.readline()
-        print('R Done')
+        tempf = simp(bot.readline())
+        templ = simp(bot.readline())
+        tempr = simp(bot.readline())
         data.addValue(tempf,templ,tempr)
-        print('Data added')
 
-def rotate():
+def simp(n):
+    if len(n)==0:
+        return 0
+    index = 1
+    try:
+        for i in range(len(n)):
+            int(n[:index])
+            index+=1
+    except:
+        pass
+    return int(n[:index])
+
+def rotater():
     actions.push('Right rotate 27 Deg')
     bot.write('r')
+def rotatel():
+    acrtions.push('Left rotate 27 Deg')
+    bot.write('l')
 
 def go():
     global grid
