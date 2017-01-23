@@ -56,7 +56,6 @@ def straight_map():
     While True:
         data.clear
         readFront()
-        #forward scan right forward scan
 
 def readFront():
     bot.write('x')
@@ -69,11 +68,12 @@ def singleConvert(n):
         return keyValues[n]
     else:
         while True:
-        ###you know what to do here!
-        
-
-
-    
+            if n+count in keyValues:
+                return[n+count]
+            elif n-count in keyValues:
+                return[n-count]
+            else:
+            count += 1
 
 def noTurn():
     connect()
