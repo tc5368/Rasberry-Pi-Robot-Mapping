@@ -53,8 +53,8 @@ def spinning_map():
 
 def straight_map():
     connect()
-    While True:
-        data.clear
+    while True:
+        data.clear()
         readFront()
 
 def readFront():
@@ -73,7 +73,7 @@ def singleConvert(n):
             elif n-count in keyValues:
                 return[n-count]
             else:
-            count += 1
+                count += 1
 
 def noTurn():
     connect()
@@ -81,8 +81,6 @@ def noTurn():
     readSensorValues()
     f,l,r = convert()
     plot(f*2,l*2,r*2)
-
-
 
 def connect():
     global bot
