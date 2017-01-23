@@ -15,11 +15,6 @@ mode = ''
 #With usign the analouge read I have found these to be the average measurments
 keyValues = {610:5,530:10,460:11,440:12,370:14,310:16,280:18,260:20,200:25,150:30,130:40,110:60,105:80}
 
-
-
-
-
-
 def decode():
     current = QR(filename = u'/home/pi/Desktop/Course Work/Python/checking.png')
     if current.decode():   #For testing purposes, returns true if works
@@ -64,9 +59,18 @@ def straight_map():
         #forward scan right forward scan
 
 def readFront():
-    None #Read only front sensor
+    bot.write('x')
+    tempf = bot.readline()
+    return singleConvert(simp(tempf))
 
-
+def singleConvert(n):
+    count = 0
+    if n in keyValues:
+        return keyValues[n]
+    else:
+        while True:
+        ###you know what to do here!
+        
 
 
     
