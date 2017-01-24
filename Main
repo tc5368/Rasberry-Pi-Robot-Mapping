@@ -48,19 +48,48 @@ def spinning_map():
         f,l,r = convert()
         plot(f*2,l*2,r*2)
         rotater()
-        turtle.right(27)
+        turtle.right(90)
 
 
 def straight_map():
     connect()
     while True:
+        time.sleep(2)
         data.clear()
-        readFront()
+        tempf = readFront()
+        turtle.fd(2*tempf)
+        turtle.bk(2*tempf)
+        bot.write('rfl')
+        turtle.right(90)
+        turtle.fd(20)
+        turtle.left(90)
+        
 
 def readFront():
-    bot.write('x')
+    bot.write('k')
     tempf = bot.readline()
     return singleConvert(simp(tempf))
+
+def readLeft():
+    bot.write('j')
+    templ = bot.readline()
+    return singleConvert(simp(tempf))
+
+def readRight():
+    bot.write('l')
+    tempr = bot.readline()
+    return singleConvert(simp(tempf))
+
+
+def diagonalMap():
+    connect()
+    while True:
+        tempr = readRight()
+        bot.write('f')
+        turtle.right(45)
+        turtle.fd(tempr*2)
+        turtle.bk(tempr*2)
+        turtle.left(45)
 
 def singleConvert(n):
     count = 0
@@ -87,7 +116,7 @@ def connect():
     time.sleep(1)
     while True:
         try:
-            bot = serial.Serial('/dev/ttyACM0',9600,timeout=1)
+            bot = serial.Serial('/dev/ttyACM1',9600,timeout=1)
             if bot.isOpen() == True:
                 print('Connection Established')
                 break
