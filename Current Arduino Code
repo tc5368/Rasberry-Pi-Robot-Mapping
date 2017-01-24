@@ -15,19 +15,22 @@ void setup() {
 }
 
 void loop() {
-  delay(200);
+  delay(500);
   rs.stop();
   if (Serial.available() > 0){
     incomingByte = Serial.read();
     if(incomingByte == 'r'){
-      rs.rot_cw(200,500);
-      delay(1000);
+      rs.rot_cw(500,500);
+      delay(500);
     }else if (incomingByte == 'f'){
-      rs.forward(200,500);
+      rs.forward(600,500);
+      delay(500);
     }else if (incomingByte == 'l'){
-      rs.rot_ccw(200,500);
+      rs.rot_ccw(500,500);
+      delay(500);
     }else if (incomingByte == 'b'){
-      rs.backward(200,500);
+      rs.reverse(600,500);
+      delay(500);
     }else if (incomingByte == 's'){
       front = analogRead(FrontBump);
       left = analogRead(LeftBump);
@@ -35,7 +38,13 @@ void loop() {
       Serial.println(front);
       Serial.println(left);
       Serial.println(right);
-    }else if (incomingByte == 'x'){
+    }else if (incomingByte == 'j'){
+      left = analogRead(LeftBump);
+      Serial.println(left)
+    }else if (incomingByte == 'l'){
+      right = analogRead(RightBump);
+      Serial.println(right)
+    }else if (incomingByte == 'k'){
       front = analogRead(FrontBump);
       Serial.println(front);
     }
