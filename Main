@@ -73,23 +73,32 @@ def readFront():
 def readLeft():
     bot.write('j')
     templ = bot.readline()
-    return singleConvert(simp(tempf))
+    return singleConvert(simp(templ))
 
 def readRight():
-    bot.write('l')
+    bot.write('h')
     tempr = bot.readline()
-    return singleConvert(simp(tempf))
+    return singleConvert(simp(tempr))
 
 
 def diagonalMap():
     connect()
+    turtle.pos()
+    turtle.penup()
+    turtle.setx(-300)
+    turtle.pendown()
     while True:
-        tempr = readRight()
-        bot.write('f')
-        turtle.right(45)
-        turtle.fd(tempr*2)
-        turtle.bk(tempr*2)
-        turtle.left(45)
+        try:
+            input('')
+        except:
+            time.sleep(1.5)
+            tempr = readRight()
+            bot.write('f')
+            turtle.right(45)
+            turtle.fd(tempr*2)
+            turtle.bk(tempr*2)
+            turtle.left(45)
+            turtle.fd(20)
 
 def singleConvert(n):
     count = 0
@@ -116,7 +125,7 @@ def connect():
     time.sleep(1)
     while True:
         try:
-            bot = serial.Serial('/dev/ttyACM1',9600,timeout=1)
+            bot = serial.Serial('/dev/tty.usbmodem1411',9600,timeout=1)
             if bot.isOpen() == True:
                 print('Connection Established')
                 break
