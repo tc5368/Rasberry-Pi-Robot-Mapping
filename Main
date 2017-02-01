@@ -1,9 +1,12 @@
-import turtle, serial, time, random, os, sys
+#This is the initial setup for the program including the importing of libaries
+import turtle,serial
 from time import sleep
 from qrtools import QR
+import subprocess, os, sys
 import picamera
 camera = picamera.PiCamera()
-
+camera.vflip = True
+#This is setting the inital gloabl values
 bot = ''
 grid = []
 startx = 0
@@ -11,27 +14,27 @@ starty = 10
 current_x = 0
 current_y = 10
 mode = ''
-
-#With usign the analouge read I have found these to be the average measurments
+bot_path = '/dev/ttyACM0'
+#With using the analouge read I have found these to be the average measurments
 keyValues = {610:5,530:10,460:11,440:12,370:14,310:16,280:18,260:20,200:25,150:30,130:40,110:60,105:80}
 
 def decode():
-    current = QR(filename = u'/home/pi/Desktop/Course Work/Python/checking.png')
+    current = QR(filename = u'/home/pi/Desktop/Course Work/Python/checking.png')#Default photo location
     if current.decode():   #For testing purposes, returns true if works
         data = (str(current.data_to_string())[3:]) #have to use index to get the correct section
         return data
-
+    
 def cleanup():
     sys.path = '/home/pi/Desktop/Course Work/Python'
-    os.system('rm *.png')
+    os.system('rm *.png') #This section of code makes sure that the program doesn't spam memory with photos
 
 def take_photo():
-    camera.capture('checking.png')
+    camera.capture('checking.png') #Takes photo
 
 def loop_until_find():
     sleep(2)  #allow the camera a warmup time.                   #This function is one of the first functions that will run, it will
-    while mode == '':                                            #loop constantly until it finds a qr code that updates the mode
-        sleep(1)  #Don't want to spam the system                 #is updated which mean that a qr code has been found
+    while mode == '':                                            #loop constantly until it finds a qr code at that point it will
+        sleep(1)  #Don't want to spam the system                 # then execute that command. This means it can run any function from QR
         take_photo()
         ins = decode()
         cleanup()
@@ -50,11 +53,26 @@ def spinning_map():
         rotater()
         turtle.right(90)
 
+def remote():
+    connect()
+    camera.start_preview()  #This is a testing module that I used to test the serial ports and then also so I could test the ardunio code.
+    while True:
+        try:
+            toSend = input()
+            bot.write(toSend)
+        except:
+            pass
+l='l'#
+r='r'#
+f='f'#DELETE
+b='b'#
+o='o'#
+p='p'#
 
 def straight_map():
     connect()
     while True:
-        time.sleep(2)
+        sleep(5)
         data.clear()
         tempf = readFront()
         turtle.fd(2*tempf)
@@ -66,17 +84,17 @@ def straight_map():
         
 
 def readFront():
-    bot.write('k')
-    tempf = bot.readline()
-    return singleConvert(simp(tempf))
+    bot.write('k')                      #These three functions work in exaclty the same way they all write a single bit to the port and then read the
+    tempf = bot.readline()              #sensors answr back it also calls the single convert function to use the keyValues dictionary
+    return singleConvert(simp(tempf))   #to find the nearest measurement to the range.
 
 def readLeft():
     bot.write('j')
-    templ = bot.readline()
+    templ = bot.readline()              #same
     return singleConvert(simp(templ))
 
 def readRight():
-    bot.write('h')
+    bot.write('h')                      #same
     tempr = bot.readline()
     return singleConvert(simp(tempr))
 
@@ -88,26 +106,23 @@ def diagonalMap():
     turtle.setx(-300)
     turtle.pendown()
     while True:
-        try:
-            input('')
-        except:
-            time.sleep(1.5)
-            tempr = readRight()
-            bot.write('f')
-            turtle.right(45)
-            turtle.fd(tempr*2)
-            turtle.bk(tempr*2)
-            turtle.left(45)
-            turtle.fd(20)
+        sleep(1.5)
+        tempr = readRight()
+        bot.write('f')
+        turtle.right(45)
+        turtle.fd(tempr*2)
+        turtle.bk(tempr*2)
+        turtle.left(45)
+        turtle.fd(20)
 
 def singleConvert(n):
     count = 0
     if n in keyValues:
-        return keyValues[n]
+        return keyValues[n]                 #This function will find the nearest value to match the range of the 'n' parameter
     else:
         while True:
-            if n+count in keyValues:
-                return keyValues[n+count]
+            if n+count in keyValues:        #It uses a while loop to continuasly go through the paramenter and then adding one and taking one away from it
+                return keyValues[n+count]   #increasing each time until the nearest value is found at which time it will return that value.
             elif n-count in keyValues:
                 return keyValues[n-count]
             else:
@@ -116,29 +131,38 @@ def singleConvert(n):
 def noTurn():
     connect()
     data.clear()
-    readSensorValues()
+    readSensorValues()          #This function will just take the values from the sensors and then draw a 90 degree section of a map
     f,l,r = convert()
     plot(f*2,l*2,r*2)
 
-def connect():
-    global bot
-    time.sleep(1)
+def findSerialPort():
     while True:
+        outputOne = subprocess.check_output('ls /dev/tty*',shell=True)
+        outputTwo = subprocess.check_output('ls /dev/tty*',shell=True)
+        if outputOne != outputTwo:
+            print('change found')
+            sleep(5)
+
+
+
+def connect():
+    global bot, bot_path  #This is one of the most important function, it runs everytime I run the program
+    while True: #This function uses a while loop to try and connect to the bot
         try:
-            bot = serial.Serial('/dev/tty.usbmodem1411',9600,timeout=1)
+            bot = serial.Serial(bot_path,9600,timeout=1)
             if bot.isOpen() == True:
                 print('Connection Established')
                 break
         except:
             print('Scanning...')
-            time.sleep(1)
+            sleep(1)
             
 def readSensorValues():
     global actions
     print('start')
     actions.push('Read Sensors')
     for i in range(10):
-        time.sleep(0.2)
+        sleep(0.2)
         bot.write('s')
         tempf = simp(bot.readline())
         templ = simp(bot.readline())
@@ -161,7 +185,7 @@ def rotater():
     actions.push('Right rotate 27 Deg')
     bot.write('r')
 def rotatel():
-    acrtions.push('Left rotate 27 Deg')
+    actions.push('Left rotate 27 Deg')
     bot.write('l')
 
 def go():
