@@ -98,7 +98,18 @@ def singleConvert(n):
             else:
                 count += 1
 
-
+def readSensorValues():
+    global actions
+    print('start')
+    actions.push('Read Sensors')
+    for i in range(10):
+        sleep(0.2)
+        bot.write('s')
+        actions.append('s')
+        tempf = simp(bot.readline())
+        templ = simp(bot.readline())
+        tempr = simp(bot.readline())
+        data.addValue(tempf,templ,tempr)
 
 
 
