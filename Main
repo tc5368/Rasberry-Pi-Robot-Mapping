@@ -4,9 +4,10 @@ from time import sleep
 from qrtools import QR
 import subprocess, os, sys
 import picamera
+
+#This is setting the inital gloabl values
 camera = picamera.PiCamera()
 camera.vflip = True
-#This is setting the inital gloabl values
 bot = ''
 grid = []
 startx = 0
@@ -45,7 +46,7 @@ def loop_until_find():
 
 def spinning_map():
     connect()
-    while True:
+    while True
         data.clear()
         readSensorValues()
         f,l,r = convert()
@@ -60,6 +61,7 @@ def remote():
         try:
             toSend = input()
             bot.write(toSend)
+            actions.push('Manual')
         except:
             pass
 l='l'#
@@ -78,23 +80,29 @@ def straight_map():
         turtle.fd(2*tempf)
         turtle.bk(2*tempf)
         bot.write('rfl')
+        actions.append('r')
+        actions.append('f')
+        actions.append('l')
         turtle.right(90)
         turtle.fd(20)
         turtle.left(90)
         
 
 def readFront():
-    bot.write('k')                      #These three functions work in exaclty the same way they all write a single bit to the port and then read the
+    bot.write('k')#These three functions work in exaclty the same way they all write a single bit to the port and then read the
+    actions.append('k')
     tempf = bot.readline()              #sensors answr back it also calls the single convert function to use the keyValues dictionary
     return singleConvert(simp(tempf))   #to find the nearest measurement to the range.
 
 def readLeft():
     bot.write('j')
+    actions.append('j')
     templ = bot.readline()              #same
     return singleConvert(simp(templ))
 
 def readRight():
-    bot.write('h')                      #same
+    bot.write('h')  #same
+    actions.append('h')
     tempr = bot.readline()
     return singleConvert(simp(tempr))
 
@@ -109,6 +117,7 @@ def diagonalMap():
         sleep(1.5)
         tempr = readRight()
         bot.write('f')
+        actions.append('f')
         turtle.right(45)
         turtle.fd(tempr*2)
         turtle.bk(tempr*2)
@@ -164,6 +173,7 @@ def readSensorValues():
     for i in range(10):
         sleep(0.2)
         bot.write('s')
+        actions.append('s')
         tempf = simp(bot.readline())
         templ = simp(bot.readline())
         tempr = simp(bot.readline())
@@ -184,9 +194,11 @@ def simp(n):
 def rotater():
     actions.push('Right rotate 27 Deg')
     bot.write('r')
+    actions.append('r')
 def rotatel():
     actions.push('Left rotate 27 Deg')
     bot.write('l')
+    actions.append('l')
 
 def go():
     global grid
@@ -300,7 +312,10 @@ class Stack():
 
     def size(self):
         return(len(self.stack))
-        
+
+
+
+
         
 data = lists()
 actions = Stack(100)
