@@ -1,0 +1,195 @@
+#*****  Importing used modules  ******#
+
+import turtle,serial
+from time import sleep
+from qrtools import QR
+import subprocess, os, sys
+import picamera
+
+#******  Setting up Global variables and constants  ******#
+
+camera = picamera.PiCamera()
+camera.vflip = True
+bot = ''
+bot_path = '/dev/ttyACM0'
+keyValues = {610:5,530:10,460:11,440:12,370:14,310:16,280:18,260:20,200:25,150:30,130:40,110:60,105:80}
+
+
+#******  Debugging Modules used in testing  ******#
+
+class bot():
+    def __init__(self):
+        self.name = ''  #This is for testing when not on a Pi
+    def write(self,st):
+        pass
+
+def findSerialPort():
+    while True:
+        outputOne = subprocess.check_output('ls /dev/tty*',shell=True)
+        if path in outputOne:
+            print('Path found')
+            sleep(5)
+            return
+        else:
+            print('Current Path not compatible')
+            print(outputOne)
+            path = input('Enter new path:')
+    
+#******  QR Section / Photo Control  ******#
+    
+def loop_until_find():
+    sleep(2)  #allow the camera a warmup time.                   #This function is one of the first functions that will run, it will
+    while mode == '':                                            #loop constantly until it finds a qr code at that point it will
+        sleep(1)  #Don't want to spam the system                 # then execute that command. This means it can run any function from the
+        take_photo()                                             #program that is given in a QR format.
+        ins = decode()
+        cleanup()
+        try:
+            exec(ins)
+        except:
+            pass
+
+def cleanup():
+    sys.path = '/home/pi/Desktop/Course Work/Python'            #This section of code makes sure that the program doesn't spam memory with photos
+    os.system('rm *.png')                                       #it uses the sys and os modules to run a terminal command that will delete any file that 
+                                                                #ends with a .png extension.
+
+def take_photo():
+    camera.capture('checking.png')                              #this is the section of code that takes photo and then saves it a checking.png
+
+
+def decode():
+    current = QR(filename = u'/home/pi/Desktop/Course Work/Python/checking.png')
+    if current.decode():                                       
+        data = (str(current.data_to_string())[3:])             #This subroutine uses the qrtools module to check if the photo that was taken 'checking.png'
+        return data                                            #contains a QR code, if it does then the it will return the data from it
+    
+
+
+#******  Robot Commands  ******#
+
+index = {f:'Forward',b:'Backwards',l:'Left',r:'Right',k:'readFront',j:'readLeft',h:'readRight'}
+
+def send(n):
+    bot.write(n)
+    actions.append(n)
+
+
+def read(n):
+    bot.write(n)
+    actions.append(n)
+    tempr = bot.readline()
+    return singleConvert(simp(tempr))
+
+
+
+#******  Converting Sections  ******#
+
+def singleConvert(n):
+    count = 0
+    if n in keyValues:
+        return keyValues[n]                 #This function will find the nearest value to match the range of the 'n' parameter
+    else:
+        while True:
+            if n+count in keyValues:        #It uses a while loop to continuasly go through the paramenter and then adding one and taking one away from it
+                return keyValues[n+count]   #increasing each time until the nearest value is found at which time it will return that value.
+            elif n-count in keyValues:
+                return keyValues[n-count]
+            else:
+                count += 1
+
+
+
+
+
+#******  Main Section  ******#
+
+def connect():
+    global bot, bot_path  #This is one of the most important function, it runs everytime I run the program
+    while True:          #This function uses a while loop to try and connect to the bot
+        try:
+            bot = serial.Serial(bot_path,9600,timeout=1)
+            if bot.isOpen() == True:
+                print('Connection Established')
+                break
+        except:
+            print('Scanning...')
+            sleep(1)
+
+
+#******  Class Setup  ******#
+
+class lists():
+    def __init__(self):
+        self.forward = []
+        self.right = []
+        self.left = []
+        self.countForward = 0
+        self.countLeft = 0
+        self.countRight = 0
+        
+    def avg(self):
+        max = len(self.forward)
+        for i in range(max):
+            self.countForward += self.forward[i]
+            self.countLeft += self.left[i]
+            self.countRight += self.right[i]
+        return self.countForward/max, self.countLeft/max, self.countRight/max
+        
+    def addValue(self,f,l,r):
+        self.forward.append(f)
+        self.left.append(l)
+        self.right.append(r)
+
+    def clear(self):
+        self.forward = []
+        self.right = []
+        self.left = []
+        self.countForward = 0
+        self.countLeft = 0
+        self.countRight = 0
+
+class Stack():
+    def __init__(self):
+        self.maxsize = maxsize
+        self.pointer = -1
+        self.stack = []
+        
+    def display(self):
+        print(self.stack)         
+                       
+    def push(self,to_add):
+        if len(self.stack) < self.maxsize:
+            self.stack.append(to_add)
+            self.pointer += 1
+        else:
+            print('Stack Overflow')
+                       
+    def pop(self):
+        if len(self.stack) > 0:
+            current = (self.stack[self.pointer])
+            self.stack[self.pointer] = ''
+            self.pointer -= 1
+            return current
+        else:
+            print('Underflow')
+
+    def returning(self):
+        return self.stack
+
+    def size(self):
+        return(len(self.stack))
+
+
+
+
+        
+data = lists()
+actions = Stack(100)
+
+
+
+
+
+
+    
