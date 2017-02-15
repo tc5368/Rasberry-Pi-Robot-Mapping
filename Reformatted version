@@ -76,7 +76,7 @@ def send(n):
 
 
 def read(n):
-    bot.write(n)
+    send(n)
     actions.append(n)
     tempr = bot.readline()
     return singleConvert(simp(tempr))
@@ -101,10 +101,9 @@ def singleConvert(n):
 def readSensorValues():
     global actions
     print('start')
-    actions.push('Read Sensors')
     for i in range(10):
         sleep(0.2)
-        bot.write('s')
+        send('s')
         actions.append('s')
         tempf = simp(bot.readline())
         templ = simp(bot.readline())
@@ -127,6 +126,24 @@ def connect():
             print('Scanning...')
             sleep(1)
 
+def readAllSensors():
+    count = 0
+    forDis, leftDis, rightDis = data.avg()
+    inputDis = [forDis,leftDis,rightDis]
+    outputDis = [0,0,0]
+    print(inputDis)
+    for i in range(3):
+        while True:
+                if inputDis[i]+count in keyValues:        
+                    outputDis[i] = keyValues[inputDis[i]+1]
+                    break
+                elif inputDis[i]-count in keyValues:
+                    outputDis[i] = keyValues[inputDis[i]-1]
+                    break
+                else:
+                    count += 1
+    print(outputDis)
+    return outputDis
 
 #******  Class Setup  ******#
 
