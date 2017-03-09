@@ -35,7 +35,7 @@ class board():
             self.grid[i][0] = Wall
             self.grid[i][self.xsize-1] = Wall
         total = int(self.xsize * self.ysize)
-        obstactleNum = random.randint(int(total/30),int(total/20))
+        obstactleNum = random.randint(int(total/50),int(total/30))
         count = obstactleNum
         print(count)
         while count != 0:
@@ -55,10 +55,16 @@ class robotSim():
         self.currentx = startx
         self.symbol = symbol
 
+        for iy in range(-1,2):
+            for ix in range(-1,2):
+                if room[self.currenty+iy][self.currentx+ix] == Wall:
+                    room[self.currenty+iy][self.currentx+ix] = ' '
+
     def refresh(self):
         room[self.currenty][self.currentx] = self.symbol
         #see every iteration of Map uncomment next line
         #printRoom()
+        #n = input('')
 
     def move(self,direction):
         tempx = self.currentx
@@ -102,37 +108,56 @@ class robotSim():
         Map[self.currenty][self.currentx] = self.symbol
         self.check()
         count = 1
+        for i in range(100000):
+            move = random.randint(0,3)
+            if move == 0:
+                bot.runFor()
+            elif move == 1:
+                bot.runBack()
+            elif move == 2:
+                bot.runRight()
+            elif move == 3:
+                bot.runLeft()
+
+    def runFor(self):
         while True:
-            if Map[self.currenty-1][self.currentx] == ' ':
-                print('Clear Infront going forwards')
+            if Map[self.currenty-1][self.currentx] == ' ' and Map[self.currenty-1][self.currentx] != Wall:
+                #print('Clear Infront going forwards')
                 self.check()
                 self.move('u')
             else:
-                print('No longer clear infront')
+                #print('No longer clear infront')
                 break
+
+    def runRight(self):
         while True:
-            if Map[self.currenty][self.currentx+1] == ' ':
-                print('Clear to the right going right')
+            if Map[self.currenty][self.currentx+1] == ' ' and Map[self.currenty][self.currentx+1] != Wall :
+                #print('Clear to the right going right')
                 self.check()
                 self.move('r')
             else:
-                print('No longer clear to the right')
+                #print('No longer clear to the right')
                 break
+
+    def runBack(self):
         while True:
-            if Map[self.currenty+1][self.currentx] == ' ':
-                print('Clear Behind going backwards')
+            if Map[self.currenty+1][self.currentx] == ' ' and Map[self.currenty+1][self.currentx] != Wall:
+                #print('Clear Behind going backwards')
                 self.check()
                 self.move('d')
             else:
-                print('No longer clear behind')
+                #print('No longer clear behind')
                 break
+
+    def runLeft(self):
         while True:
-            if Map[self.currenty][self.currentx-1] == ' ':
-                print('Clear to the left going left')
+            if Map[self.currenty][self.currentx-1] == ' ' and Map[self.currenty][self.currentx-1] != Wall:
+                #print('Clear to the left going left')
                 self.check()
                 self.move('l')
             else:
-                print('No longer clear to the left')
+                #print('No longer clear to the left')
+                break
 
     def check(self):
         tempu,tempd,templ,tempr = self.getAll()
@@ -167,9 +192,15 @@ def genBlankMap():
     blank = generatingBlankRoom.grid
     return blank
 
+def showMap():
+    for i in range(yHeight):
+        print(Map[i])
 
 room = main(28,28)
 bot = robotSim(14,14,'X')
 bot.refresh()
 Map = genBlankMap()
 bot.startMap()
+showMap()
+print('\n','\n')
+printRoom()
