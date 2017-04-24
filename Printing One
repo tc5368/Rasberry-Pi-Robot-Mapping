@@ -324,14 +324,14 @@ class board():
     def __init__(self,xsize,ysize):
         self.grid = []
         self.ysize = ysize
-        self.xsize = xsize
-        for iy in range(ysize):
+        self.xsize = xsize			#This function will create a 2d grid that I will be using in the simulation, it has a
+        for iy in range(ysize):			#variable size and can be changed.
             self.grid.append([])
             for ix in range(xsize):
                 self.grid[iy].append(' ')
 
     def display(self):
-        for i in range(self.ysize):
+        for i in range(self.ysize):		#This is the showing program that will display the 2d array line by line to stop poor formatting.
             print(self.grid[i])
 
     def boardSize(self):
@@ -339,10 +339,11 @@ class board():
 
     def genBarrier(self):
         count = 0
-        for i in range(self.xsize):
-            self.grid[0][i] = Wall
-            self.grid[self.ysize-1][i] = Wall
-        for i in range(self.ysize):
+        for i in range(self.xsize):					#This function will produce sections that are cordend off
+            self.grid[0][i] = Wall					#it will first completly go around the outside and make the boarder
+            self.grid[self.ysize-1][i] = Wall				#a no go zone, then it should spawn random sections that are also
+        for i in range(self.ysize):					#not allowed into.
+	
             self.grid[i][0] = Wall
             self.grid[i][self.xsize-1] = Wall
         total = int(self.xsize * self.ysize)
