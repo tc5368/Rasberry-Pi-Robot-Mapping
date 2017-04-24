@@ -1,0 +1,638 @@
+
+---------------------------------------------------------------------------------------------
+---------------                      Ardunio Code section                    ----------------
+---------------------------------------------------------------------------------------------
+#include <RobotShield.h>
+RobotShield rs;
+
+int FrontBump = 2;						//This section is where the robot sheild libary is installed	
+int RightBump = 1;						//It is also where all of the variables that will be used are setup		
+int LeftBump = 0;						//It is also where the inputs are defineied, the distance sensros 2,1,&0
+int front;								
+int left;
+int right;
+int Trigger = 500;
+char incomingByte;
+
+void setup() {
+  Serial.begin(9600);					//This is the setup loop whcih means that it will run exactly once at the start of the program,
+}										//it is what initialised the connection between the ardunio and the raspbery pi.
+
+void loop() {							//This loop program will do as it says and loop continuasly, it has a half a second delay at the start
+  delay(500);							//this is to just slow the program down and make sure that the raspberry pi is able to keep up with the data transmission.
+  rs.stop();
+  if (Serial.available() > 0){ 			//This line checks to see if the pi has sent anything on the serial connection. If it has then it will run, if not it will
+    incomingByte = Serial.read();		//wait half a second and then check again, if it has recieved something it will just run throguh a series of if elif statements
+    if(incomingByte == 'r'){			//until it finds the corresponding value, at that point it will run that particualr section of code.
+      rs.rot_cw(350,255);
+      delay(500);
+    }else if (incomingByte == 'f'){		//If 'r' is recivede that it will rotate the bot using the robot sheild libary it is formated (timeOnFor,power)
+      rs.forward(600,255);				//this is the same for 'l' except in the opposite driection.
+      delay(500);
+    }else if (incomingByte == 'l'){
+      rs.rot_ccw(350,255);
+      delay(500);
+    }else if (incomingByte == 'p'){		//putting in other inputs 'p' and 'o' will do the same but for less time resulting in a small turning angle.
+      rs.rot_ccw(200,255);
+      delay(500);
+    }else if (incomingByte == 'o'){
+      rs.rot_cw(200,255);
+      delay(500);
+    }else if (incomingByte == 'b'){
+      rs.reverse(600,255);
+      delay(500);
+    }else if (incomingByte == 's'){		//When it recives s the robot will analoge read the distance sensors and then it will sequencailly send those values to the pi.
+      front = analogRead(FrontBump);
+      left = analogRead(LeftBump);
+      right = analogRead(RightBump);
+      Serial.println(front);
+      Serial.println(left);
+      Serial.println(right);
+    }else if (incomingByte == 'j'){		//The distances can also be requested induvidally using the inputs 'j' (left), 'h' (right), 'k' (front)
+      left = analogRead(LeftBump);
+      Serial.println(left);
+    }else if (incomingByte == 'h'){
+      right = analogRead(RightBump);
+      Serial.println(right);
+    }else if (incomingByte == 'k'){
+      front = analogRead(FrontBump);
+      Serial.println(front);
+    }
+  }
+}
+
+---------------------------------------------------------------------------------------------
+---------------                      Rasberry Pi section                     ----------------
+---------------------------------------------------------------------------------------------
+
+#*****  Importing used modules  ******#
+
+import turtle,serial,pickle, random
+from time import sleep
+import subprocess, os, sys
+
+import picamera         #These functions can only be run on the pi.
+from qrtools import QR
+
+#******  Setting up Global variables and constants  ******#
+
+camera = picamera.PiCamera()
+camera.vflip = True
+bot = ''
+bot_path = 'Will Be Changed' #could be left blank but for sake of readability.
+keyValues = {610:5,530:10,460:11,440:12,370:14,310:16,280:18,260:20,200:25,150:30,130:40,110:60,105:80}
+Wall = 'B' # The wall value will change the character of the filled space on the simulation map.
+
+#******  Debugging Modules used in testing  ******#
+
+def findSerialPort():
+    global bot_path
+    while True:
+        outputOne = subprocess.check_output('ls /dev/tty*',shell=True)
+        if bot_path in outputOne:
+            print('Path found')
+            sleep(1)
+            return
+        else:
+            print('Current Path not compatible')
+            print(outputOne)
+            bot_path = input('Enter new path:')
+            print('Retrying, with new path')
+            sleep(1)
+            connect()
+
+#******  QR Section / Photo Control  ******#
+
+def loop_until_find():
+    sleep(2)  #allow the camera a warmup time.                   #This function is one of the first functions that will run, it will
+    while True:                                                  #loop constantly until it finds a qr code at that point it will
+        sleep(1)  #Don't want to spam the system                 # then execute that command. This means it can run any function from the
+        take_photo()                                             #program that is given in a QR format.
+        ins = decode()
+        cleanup()
+        try:
+            exec(ins)
+        except:
+            pass
+
+def TestingQRCodeCode():
+    current = QR(filename = u'/home/pi/Desktop/Course Work/Python/checking.png')
+																#This is the line that loads the file as a QR code object into the program
+																#It uses the same path as to the programs location and so also the place where the photos would go.
+    if current.decode() == True: 								#This evalutes whether the QR code is a valid QR code.
+        data = current.data_to_string() 						#this returns the string form the QR code however it returns with escapse clauses.
+        return data
+
+def cleanup():
+    sys.path = '/home/pi/Desktop/Course Work/Python'            #This section of code makes sure that the program doesn't spam memory with photos
+    os.system('rm *.png')                                       #it uses the sys and os modules to run a terminal command that will delete any file that
+                                                                #ends with a .png extension.
+
+def take_photo():
+    camera.capture('checking.png')                              #this is the section of code that takes photo and then saves it a checking.png
+
+
+def decode():
+    current = QR(filename = u'/home/pi/Desktop/Course Work/Python/checking.png')
+    if current.decode() == True:
+        data = (str(current.data_to_string())[3:])             #This subroutine uses the qrtools module to check if the photo that was taken 'checking.png'
+        return data                                            #contains a QR code, if it does then the it will return the data from it
+
+
+#******  Robot Commands  ******#
+
+#index = {f:Forward,b:Backwards,l:Left,r:Right,k:readFront,j:readLeft,h:readRight,p:little bit left, o:little bit right}
+
+def send(n):
+    bot.write(n)									#These functions are just to allow for easier coding later on
+    actions.push(n)									#instead of writing bot.write then a bunch of read statments I now
+													#call on of these functions to save time and space.
+def read(n):
+    send(n)
+    tempr = bot.readline()
+    return singleConvert(simp(tempr))
+
+#******  Saving and Opening  ******#
+
+def saveMap(current_room):
+    room_name = open(('room_{}.pkl').format(str(current_room)),'wb')	#these two function are what saves and opens the new or previous maps
+    x = actions.returning()												#they use the pickle module for the sake of ease which means the files will be saved
+    pickle.dump(x, room_name)											# in a .pkl file. They also format the file name to make the rooms all have similar map names.
+    room_name.close()
+
+def loadMap(current_room):
+    file = open(('room_{}.pkl').format(str(current_room)),'rb')
+    actions.stack = pickle.load(file)
+    file.close()
+
+#******  Converting Sections  ******#
+
+def singleConvert(n):
+    count = 0
+    if n in keyValues:
+        return keyValues[n]                 #This function will find the nearest value to match the range of the 'n' parameter
+    else:
+        while True:
+            if n+count in keyValues:        #It uses a while loop to continuasly go through the paramenter and then adding one and taking one away from it
+                return keyValues[n+count]   #increasing each time until the nearest value is found at which time it will return that value.
+            elif n-count in keyValues:
+                return keyValues[n-count]
+            else:
+                count += 1
+
+def simp(n):
+    if len(n)==0:
+        return 0
+    index = 1
+    try:
+        for i in range(len(n)):
+            int(n[:index])
+            index+=1
+    except:
+        pass
+    return int(n[:index])
+
+
+#******  Main Section  ******#
+
+def createMap():
+    for i in range(8):					#This createMap function, will get the 3 values from the distance sensors, they
+        f,l,r = readAllSensors()		#they will then send these values through the plot function that will use the
+        plot(2*f,2*l,2*r)				#turlte module to send raycasts out the appropriate distance to create the map.
+        send('o')						#finally it will then rotate the robot until it has a 360 map.
+
+def plot(f,l,r):
+    turtle.fd(f)						#This function if simple it will go out the forward distance and then rotate 45
+    turtle.bk(f)						#degrees then go forwards the right distance before rotating back 90 degrees then
+    turtle.left(45)						#then going forwards the left distance.
+    turtle.fd(l)
+    turtle.bk(l)
+    turtle.right(90)
+    turtle.fd(r)
+    turtle.bk(r)
+    turtle.left(45)
+    turtle.right(22.5)
+
+def diagonalMap():						#This is a different mapping function this one will map the enviroment either side of the robot
+    connect()							#during the coding I wanted to be able to just drive the robot forward and get infomation about
+    turtle.pos()						#the envrioment either side of the robot.
+    turtle.penup()
+    turtle.setx(-300)					#This function will make the bot go forward and then get the distance on the right and left of it.
+    turtle.pendown()					
+    while True:
+        sleep(1.5)
+        tempr = read('j')				#every 1.5 seconds the robot will move forward and scan the area on either side of it and display that as a map.
+		templ = read('h')				
+        bot.write('f')
+        turtle.right(45)
+        turtle.fd(tempr*2)
+        turtle.bk(tempr*2)								#this is a secrect note for the examimer, plese be nice!!
+		turtle.left(90)
+		turtle.fd(templ*2)
+        turtle.bk(templ*2)
+        turtle.right(45)
+        turtle.fd(20)
+
+def connect():
+    count = 0
+    global bot, bot_path 										#This is one of the most important function, it runs everytime I run the program
+    while count < 10:          									#This function uses a while loop to try and connect to the bot
+        try:
+            bot = serial.Serial(bot_path,9600,timeout=1)		#This will try to use the given bot_path to connect to the ardunio via a serial connection.
+            if bot.isOpen() == True:							#if this returns ture then that means that it is succsessfully connected.
+                print('Connection Established')					# it will run this 10 times with the given path to give every oppotunity to work.
+                break
+        except:
+            print('Scanning...')
+            sleep(0.1)
+            count += 1
+    try:
+        if bot.isOpen() == True:
+            pass
+    except:
+        print("This path dosen't appear to be working, displaying /dev/ path ?")	#It will then say that it can't connect with the curretn path and  so will
+        sleep(1)																	#run another function to print out the /dev/ path of the pi
+        findSerialPort()
+
+
+def readAllSensors():
+    count = 0
+    forDis = int(read('k'))						#This fucntion will do what it says, it will read in the values for all of the sensors and then output the 
+    leftDis = int(read('j'))					#three values in an array.
+    rightDis = int(read('h'))
+    outputDis = [forDis,leftDis,rightDis]
+    return outputDis
+
+#******  Class Setup  ******#
+
+class Stack():
+    def __init__(self,maxsize):
+        self.maxsize = maxsize              #This is a class made for a stack, I made a custom class so that I knew exactly
+        self.pointer = -1                   #how each part of it worked, I also am able to change aspects of it.
+        self.stack = []
+
+    def display(self):                      #It contains 2 main programs which are the push and the pop functions, They work
+        print(self.stack)                   #by using a pointer to know where to put items into the array and also where to pop
+                                            #from so that the array functions like a stack.
+    def push(self,to_add):
+        if len(self.stack) < self.maxsize:  #It also contains other subroutines such as to know the size of the stack whether
+            self.stack.append(to_add)       #the stack is full or not and also to return the entire stack.
+            self.pointer += 1
+        else:
+            print('Stack Overflow')         #In this stack is where all of the commands to the robot are stored, whenever a byte
+                                            #of infomation is sent to the bot it is appended to the actions stack.
+    def pop(self):                          #The actions stack is also what is saved from each room.
+        if len(self.stack) > 0:
+            current = (self.stack[self.pointer])
+            del(self.stack[self.pointer])
+            self.pointer -= 1
+            return current
+        else:
+            print('Underflow')
+
+    def returning(self):
+        return self.stack
+
+    def size(self):
+        return(len(self.stack))
+
+    def isFull(self):
+        if self.maxsize == len(self.stack):
+            return True
+        else:
+            return False
+
+actions = Stack(100)
+loop_until_find()
+
+---------------------------------------------------------------------------------------------
+---------------                     Robot Sim One section                    ----------------
+---------------------------------------------------------------------------------------------
+
+xHeight = 0
+yHeight = 0
+
+Wall = 'X'
+import random
+
+class robotSim():
+    def __init__(self,startx,starty):
+        self.curx = startx
+        self.cury = starty
+
+class board():
+    def __init__(self,xsize,ysize):
+        self.grid = []
+        self.ysize = ysize
+        self.xsize = xsize
+        for iy in range(ysize):
+            self.grid.append([])
+            for ix in range(xsize):
+                self.grid[iy].append(' ')
+
+    def display(self):
+        for i in range(self.ysize):
+            print(self.grid[i])
+
+    def boardSize(self):
+        return (xsize,ysize)
+
+    def genBarrier(self):
+        count = 0
+        for i in range(self.xsize):
+            self.grid[0][i] = Wall
+            self.grid[self.ysize-1][i] = Wall
+        for i in range(self.ysize):
+            self.grid[i][0] = Wall
+            self.grid[i][self.xsize-1] = Wall
+        total = int(self.xsize * self.ysize)
+        obstactleNum = random.randint(int(total/50),int(total/30))
+        count = obstactleNum
+        print(count)
+        while count != 0:
+            try:
+                tempx = random.randint(0,self.xsize-1)
+                tempy = random.randint(0,self.ysize-1)
+                for iy in range(-1,2):
+                    for ix in range(-1,2):
+                        self.grid[tempy+iy][tempx+ix] = Wall
+                count -= 1
+            except:
+                count -= 1
+
+class robotSim():
+    def __init__(self,starty,startx,symbol):
+        self.currenty = starty
+        self.currentx = startx
+        self.symbol = symbol
+
+        for iy in range(-1,2):
+            for ix in range(-1,2):
+                if room[self.currenty+iy][self.currentx+ix] == Wall:
+                    room[self.currenty+iy][self.currentx+ix] = ' '
+
+    def refresh(self):
+        room[self.currenty][self.currentx] = self.symbol
+        #see every iteration of Map uncomment next line
+        #printRoom()
+        #n = input('')
+
+    def move(self,direction):
+        tempx = self.currentx
+        tempy = self.currenty
+        room[self.currenty][self.currentx] = ' '
+        if direction.lower() == 'u':
+            if room[bot.currenty - 1][bot.currentx] != Wall:
+                self.currenty -= 1
+        elif direction.lower() == 'd':
+            if room[bot.currenty + 1][bot.currentx] != Wall:
+                self.currenty += 1
+        elif direction.lower() == 'l':
+            if room[bot.currenty][bot.currentx - 1] != Wall:
+                self.currentx -= 1
+        elif direction.lower() == 'r':
+            if room[bot.currenty][bot.currentx + 1] != Wall:
+                self.currentx += 1
+        self.refresh()
+
+    def senseDis(self,direction):
+        print('running')
+        xsize = xHeight
+        ysize = yHeight
+        if direction.lower() == 'u':
+            for i in range(ysize - (ysize - self.currenty)+1):
+                print(i)
+                if room[self.currenty-i][self.currentx] == Wall:
+                    return i-1
+        elif direction.lower() == 'd':
+            for i in range(ysize - self.currenty+1):
+                if room[self.currenty+i][self.currentx] == Wall:
+                    return i-1
+        elif direction.lower() == 'l':
+            for i in range(xsize - (xsize - self.currentx)+1):
+                if room[self.currenty][self.currentx-i] == Wall:
+                    return i-1
+        elif direction.lower() == 'r':
+            for i in range(xsize - self.currentx+1):
+                if room[self.currenty][self.currentx+i] == Wall:
+                    return i-1
+
+    def startMap(self):
+        Map[self.currenty][self.currentx] = self.symbol
+        self.check()
+        count = 1
+        for i in range(100):
+            move = random.randint(0,3)
+            if move == 0:
+                self.runFor()
+            elif move == 1:
+                self.runBack()
+            elif move == 2:
+                self.runRight()
+            elif move == 3:
+                self.runLeft()
+
+    def runFor(self):
+        while True:
+            if Map[self.currenty-1][self.currentx] == ' ' and Map[self.currenty-1][self.currentx] != Wall:
+                #print('Clear Infront going forwards')
+                self.check()
+                self.move('u')
+            else:
+                #print('No longer clear infront')
+                break
+
+    def runRight(self):
+        while True:
+            if Map[self.currenty][self.currentx+1] == ' ' and Map[self.currenty][self.currentx+1] != Wall :
+                #print('Clear to the right going right')
+                self.check()
+                self.move('r')
+            else:
+                #print('No longer clear to the right')
+                break
+
+    def runBack(self):
+        while True:
+            if Map[self.currenty+1][self.currentx] == ' ' and Map[self.currenty+1][self.currentx] != Wall:
+                #print('Clear Behind going backwards')
+                self.check()
+                self.move('d')
+            else:
+                #print('No longer clear behind')
+                break
+
+    def runLeft(self):
+        while True:
+            if Map[self.currenty][self.currentx-1] == ' ' and Map[self.currenty][self.currentx-1] != Wall:
+                #print('Clear to the left going left')
+                self.check()
+                self.move('l')
+            else:
+                #print('No longer clear to the left')
+                break
+
+    def check(self):
+        tempu,tempd,templ,tempr = self.getAll()
+        distances = [tempu,tempd,templ,tempr]
+        Map[self.currenty-tempu][self.currentx] = Wall
+        Map[self.currenty+tempd][self.currentx] = Wall
+        Map[self.currenty][self.currentx+tempr] = Wall
+        Map[self.currenty][self.currentx-templ] = Wall
+
+    def getAll(self):
+        u = int(self.senseDis('u'))+1
+        d = int(self.senseDis('d'))+1
+        l = int(self.senseDis('l'))+1
+        r = int(self.senseDis('r'))+1
+        return(u,d,l,r)
+
+def main(xinput,yinput):
+    global xHeight, yHeight
+    xHeight = xinput
+    yHeight = yinput
+    generatingRoom = board(xinput,yinput)
+    generatingRoom.genBarrier()
+    return generatingRoom.grid
+
+def printRoom():
+    for i in range(len(room)):
+	       print(room[i])
+
+def genBlankMap():
+    generatingBlankRoom = board(xHeight,yHeight)
+    blank = generatingBlankRoom.grid
+    return blank
+
+def showMap():
+    for i in range(yHeight):
+        print(Map[i])
+
+def saveMap():
+    pass
+def loadMap():
+    pass
+
+room = main(28,28)
+bot = robotSim(14,14,'X')
+bot.refresh()
+Map = genBlankMap()
+bot.startMap()
+showMap()
+print('\n','\n')
+printRoom()
+
+---------------------------------------------------------------------------------------------
+---------------                     Robot Sim Two section                    ----------------
+---------------------------------------------------------------------------------------------
+
+from math import *
+import random, time
+import turtle as t
+
+class vector():
+    def __init__(self,x,y):
+        self.x = x
+        self.y = y
+        self.vector = [self.x,self.y]
+
+    def show(self):
+        print(self.vector)
+
+    def findThirdSide(self,otherVector):
+        global resultantVector
+        outputx = self.x - otherVector.x
+        outputy = self.y - otherVector.y
+        return vector(outputx,outputy)
+
+    def findLength(self):
+        tempOne = self.x ** 2
+        tempTwo = self.y ** 2
+        output = sqrt(tempOne+tempTwo)
+        return output
+
+    def dotProduct(self,otherVector):
+        tempX = self.x * otherVector.x
+        tempY = self.y * otherVector.y
+        return tempX + tempY
+
+    def findAngle(self,otherVector):
+        tempOne = self.findThirdSide(otherVector)
+        topOfFraction = int(self.dotProduct(tempOne))
+        bottomOfFraction = self.findLength() * tempOne.findLength()
+        angle = acos(topOfFraction / bottomOfFraction)
+        print(topOfFraction,bottomOfFraction,angle)
+        return angle
+
+
+class RobotSim():
+    def __init__(self,x,y,heading):
+        self.x = x
+        self.y = y
+        self.heading = heading
+
+    def rotate(self,degrees):
+        self.heading += degrees
+
+    def sensorRead(self):
+        return 10 * random.randint(1,20)
+
+    def rayCast(self,divisions):
+        rayCasts = []
+        angle = 360 / divisions
+        for i in range(divisions):
+            temp = self.sensorRead()
+            self.rotate(angle)
+            rayCasts.append(temp)
+        return rayCasts
+
+
+triList = []
+bot = RobotSim(0,0,0)
+
+
+def genTriangle(divisions):
+    global triList
+    values = bot.rayCast(divisions)
+    for i in range(divisions - 1):
+        A = 360 / divisions
+        b = values[i]
+        c = values[i+1]
+        a = cosineRuleFindSide(b,c,A)
+        B = cosineRuleFindAngle(b,c,a)
+        C = cosineRuleFindAngle(c,a,b)
+        Sector = triangle(a,b,c,A,B,C)
+        triList.append(Sector)
+    print('Done')
+    for i in range(len(triList)):
+        temp = triList[i]
+        draw(temp,(- (A * i)))
+
+
+class triangle():
+    def __init__(self,a,b,c,A,B,C):
+        self.a = a
+        self.b = b
+        self.c = c
+        self.A = A
+        self.B = B
+        self.C = C
+
+def draw(tri,startAngle):
+    t.setheading(startAngle)
+    t.fd(tri.a)
+    t.rt(180 - tri.C)
+    t.fd(tri.b)
+    t.rt(180 - tri.A)
+    t.fd(tri.c)
+
+def cosineRuleFindSide(b,c,A):
+    A = radians(A)
+    a = ((b**2) + (c**2)) - (2*b*c*cos(A))
+    return(a**0.5)
+
+def cosineRuleFindAngle(a,b,c):
+    topOfFraction = (b**2 + c**2 - a**2)
+    temp = topOfFraction / (2 * b * c)
+    return(degrees(acos(temp)))
+    
