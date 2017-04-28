@@ -363,26 +363,26 @@ class board():
 
 class robotSim():
     def __init__(self,starty,startx,symbol):
-        self.currenty = starty
-        self.currentx = startx
-        self.symbol = symbol
-
+        self.currenty = starty						#This is a class I made for my virtual robot
+        self.currentx = startx						#I used a class as it would be far easier for me to use later on 
+        self.symbol = symbol						#and It could also be used if I wanted to implment multiple robot
+									#mapping.
         for iy in range(-1,2):
             for ix in range(-1,2):
                 if room[self.currenty+iy][self.currentx+ix] == Wall:
                     room[self.currenty+iy][self.currentx+ix] = ' '
 
     def refresh(self):
-        room[self.currenty][self.currentx] = self.symbol
-        #see every iteration of Map uncomment next line
+        room[self.currenty][self.currentx] = self.symbol		#This refresh function updates the robots posistion on the map
+        #see every iteration of Map uncomment next line			#to its current x and y corrdinate.
         #printRoom()
         #n = input('')
 
     def move(self,direction):
         tempx = self.currentx
-        tempy = self.currenty
-        room[self.currenty][self.currentx] = ' '
-        if direction.lower() == 'u':
+        tempy = self.currenty						#This is the movement function it will take a direction parameter
+        room[self.currenty][self.currentx] = ' '			#and then if it has an avaliable space then it will move in that 
+        if direction.lower() == 'u':					#direction.
             if room[bot.currenty - 1][bot.currentx] != Wall:
                 self.currenty -= 1
         elif direction.lower() == 'd':
@@ -399,12 +399,12 @@ class robotSim():
     def senseDis(self,direction):
         print('running')
         xsize = xHeight
-        ysize = yHeight
-        if direction.lower() == 'u':
+        ysize = yHeight							#This function will read how many clear spaces there are between 
+        if direction.lower() == 'u':					#the robot and the next obstacle.
             for i in range(ysize - (ysize - self.currenty)+1):
                 print(i)
-                if room[self.currenty-i][self.currentx] == Wall:
-                    return i-1
+                if room[self.currenty-i][self.currentx] == Wall:	#this to takes a distance parameter and will return the value
+                    return i-1						#for that distance.
         elif direction.lower() == 'd':
             for i in range(ysize - self.currenty+1):
                 if room[self.currenty+i][self.currentx] == Wall:
@@ -419,8 +419,8 @@ class robotSim():
                     return i-1
 
     def startMap(self):
-        Map[self.currenty][self.currentx] = self.symbol
-        self.check()
+        Map[self.currenty][self.currentx] = self.symbol			#This function is run at the beginning it will place the robot
+        self.check()							#into the area and then allow it to make 100 moves to create the map.
         count = 1
         for i in range(100):
             move = random.randint(0,3)
@@ -437,9 +437,9 @@ class robotSim():
         while True:
             if Map[self.currenty-1][self.currentx] == ' ' and Map[self.currenty-1][self.currentx] != Wall:
                 #print('Clear Infront going forwards')
-                self.check()
-                self.move('u')
-            else:
+                self.check()						#This function makes the robot go forward will it is still clear
+                self.move('u')						#there is one for each direction so randomally one is called and
+            else:							#it will then go from there moving fully in any direction it can.
                 #print('No longer clear infront')
                 break
 
@@ -477,12 +477,12 @@ class robotSim():
         tempu,tempd,templ,tempr = self.getAll()
         distances = [tempu,tempd,templ,tempr]
         Map[self.currenty-tempu][self.currentx] = Wall
-        Map[self.currenty+tempd][self.currentx] = Wall
-        Map[self.currenty][self.currentx+tempr] = Wall
-        Map[self.currenty][self.currentx-templ] = Wall
+        Map[self.currenty+tempd][self.currentx] = Wall		#This function simply adds in the new infomation to the map.
+        Map[self.currenty][self.currentx+tempr] = Wall		#it cheacks in every direction around it and then addsin the nearest
+        Map[self.currenty][self.currentx-templ] = Wall		#barrier that it sees.
 
     def getAll(self):
-        u = int(self.senseDis('u'))+1
+        u = int(self.senseDis('u'))+1				#This just checks the distances in every direction.
         d = int(self.senseDis('d'))+1
         l = int(self.senseDis('l'))+1
         r = int(self.senseDis('r'))+1
@@ -490,7 +490,7 @@ class robotSim():
 
 def main(xinput,yinput):
     global xHeight, yHeight
-    xHeight = xinput
+    xHeight = xinput						#This will initialise the robot and also create the map.
     yHeight = yinput
     generatingRoom = board(xinput,yinput)
     generatingRoom.genBarrier()
@@ -501,7 +501,7 @@ def printRoom():
 	       print(room[i])
 
 def genBlankMap():
-    generatingBlankRoom = board(xHeight,yHeight)
+    generatingBlankRoom = board(xHeight,yHeight)	#creates the 2d map
     blank = generatingBlankRoom.grid
     return blank
 
@@ -534,53 +534,53 @@ import turtle as t
 class vector():
     def __init__(self,x,y):
         self.x = x
-        self.y = y
-        self.vector = [self.x,self.y]
+        self.y = y					#This is my 2D vector class it allows me to have an easier way of wroking out all
+        self.vector = [self.x,self.y]			#the infomation I need about the vectors I need.
 
     def show(self):
         print(self.vector)
 
     def findThirdSide(self,otherVector):
         global resultantVector
-        outputx = self.x - otherVector.x
-        outputy = self.y - otherVector.y
+        outputx = self.x - otherVector.x		#This will find the resulatant coordinates of the vector formed between the 2 curretn vectors and then
+        outputy = self.y - otherVector.y		#save that in the current global variable.
         return vector(outputx,outputy)
 
     def findLength(self):
-        tempOne = self.x ** 2
-        tempTwo = self.y ** 2
+        tempOne = self.x ** 2				
+        tempTwo = self.y ** 2				#USES PYTHAGORUS THEROM TO FIND THE LENGTH OF THE VECOTR
         output = sqrt(tempOne+tempTwo)
         return output
 
     def dotProduct(self,otherVector):
-        tempX = self.x * otherVector.x
+        tempX = self.x * otherVector.x		#simply find the dot product of the two vectors it is claled on.
         tempY = self.y * otherVector.y
         return tempX + tempY
 
     def findAngle(self,otherVector):
         tempOne = self.findThirdSide(otherVector)
         topOfFraction = int(self.dotProduct(tempOne))
-        bottomOfFraction = self.findLength() * tempOne.findLength()
+        bottomOfFraction = self.findLength() * tempOne.findLength()		# FINDS THE ANGLE BETWEEN VECTROS.
         angle = acos(topOfFraction / bottomOfFraction)
         print(topOfFraction,bottomOfFraction,angle)
         return angle
 
 
 class RobotSim():
-    def __init__(self,x,y,heading):
+    def __init__(self,x,y,heading):				#this is the robot class I use in this program
         self.x = x
         self.y = y
         self.heading = heading
-
-    def rotate(self,degrees):
+	
+    def rotate(self,degrees):		#this allows the robot to rotate y a number of degrees given in the parameter
         self.heading += degrees
 
-    def sensorRead(self):
-        return 10 * random.randint(1,20)
+    def sensorRead(self):	
+        return 10 * random.randint(1,20)	#As this is a simulation it will return a random distance value for the distance sensror.
 
     def rayCast(self,divisions):
         rayCasts = []
-        angle = 360 / divisions
+        angle = 360 / divisions	
         for i in range(divisions):
             temp = self.sensorRead()
             self.rotate(angle)
