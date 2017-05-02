@@ -580,11 +580,11 @@ class RobotSim():
 
     def rayCast(self,divisions):
         rayCasts = []
-        angle = 360 / divisions	
-        for i in range(divisions):
-            temp = self.sensorRead()
+        angle = 360 / divisions			#This function will work out the number of sensor readings it should take
+        for i in range(divisions):		#it will divide a total rotation by the number of divisions it should take
+            temp = self.sensorRead()		#then it senses the distnace from an obstacle it is or makes a raycast.
             self.rotate(angle)
-            rayCasts.append(temp)
+            rayCasts.append(temp)		#it saves all of the raycasts into a array and then returns that array.
         return rayCasts
 
 
@@ -594,10 +594,10 @@ bot = RobotSim(0,0,0)
 
 def genTriangle(divisions):
     global triList
-    values = bot.rayCast(divisions)
-    for i in range(divisions - 1):
-        A = 360 / divisions
-        b = values[i]
+    values = bot.rayCast(divisions)		#This is the main function that is run, it will take how many divison that you
+    for i in range(divisions - 1):		#want and then produce the corresponding number of sectors made up of triangles
+        A = 360 / divisions			#it will then appends these triagnle objects into the global trilist.
+        b = values[i]				#it uses the 2 cosine functions to work out every possible side and angle of the triganle.
         c = values[i+1]
         a = cosineRuleFindSide(b,c,A)
         B = cosineRuleFindAngle(b,c,a)
@@ -605,14 +605,14 @@ def genTriangle(divisions):
         Sector = triangle(a,b,c,A,B,C)
         triList.append(Sector)
     print('Done')
-    for i in range(len(triList)):
-        temp = triList[i]
+    for i in range(len(triList)):		#after is has created all of the triangle objects it will traverse the array
+        temp = triList[i]			#and then draw out all the triangles to make a 360 degree veiw of the area.
         draw(temp,(- (A * i)))
 
 
 class triangle():
-    def __init__(self,a,b,c,A,B,C):
-        self.a = a
+    def __init__(self,a,b,c,A,B,C):	#This is my very simple triangle class, it only has the basics
+        self.a = a			#it has the 3 sides and then the 3 corresponding angles.
         self.b = b
         self.c = c
         self.A = A
@@ -620,20 +620,20 @@ class triangle():
         self.C = C
 
 def draw(tri,startAngle):
-    t.setheading(startAngle)
-    t.fd(tri.a)
+    t.setheading(startAngle)		#This is what produces the map of the area, the function is given an object triganle
+    t.fd(tri.a)				#as a parameter and also its starting angle, it will then draw out that triangle.
     t.rt(180 - tri.C)
     t.fd(tri.b)
     t.rt(180 - tri.A)
     t.fd(tri.c)
 
-def cosineRuleFindSide(b,c,A):
-    A = radians(A)
+def cosineRuleFindSide(b,c,A):			#This function is given to sides and an angle and then it will use the cosine 
+    A = radians(A)				#rule to find the missing length.
     a = ((b**2) + (c**2)) - (2*b*c*cos(A))
     return(a**0.5)
 
-def cosineRuleFindAngle(a,b,c):
-    topOfFraction = (b**2 + c**2 - a**2)
+def cosineRuleFindAngle(a,b,c):			#This works very similar to the above function but uses a rearranged formula
+    topOfFraction = (b**2 + c**2 - a**2)	#to find the missing angle opposed to the missing side.
     temp = topOfFraction / (2 * b * c)
     return(degrees(acos(temp)))
     
